@@ -2,10 +2,12 @@ from PIL import ImageColor, Image
 import glob, os
 
 class SplicedImage:
-    def __init__(self, img, coordx, coordy):
+    def __init__(self, img, coordx, coordy, width, height):
         self.img = img
         self.coordx = coordx
         self.coordy = coordy
+        self.width = width
+        self.height = height
 
 names = []
 coords = []
@@ -45,16 +47,18 @@ for infile in glob.glob("*.png"):
         continue
     coords = file.split("-")
     img2 = Image.open(infile)
-    names.append(SplicedImage(img2, int(coords[0])-cnstw, int(coords[1])-cnsth))
+    names.append(SplicedImage(infile, int(coords[0])-cnstw, int(coords[1])-cnsth, img2.width, img2.height))
+    img2.close()
+
 
 for image in names:
     if not image.coordy in unames:
-        totalh += image.img.height
+        totalh += image.height
         unames.append(image.coordy)
 unames = []
 for image in names:
     if not image.coordx in unames:
-        totalw += image.img.width
+        totalw += image.width
         unames.append(image.coordx)
 print(f"Output: {totalw} x {totalh}")
 output = Image.new("RGBA", (totalw, totalh), color=0)
@@ -63,8 +67,10 @@ cnt = 0
 len = len(names)
 
 for image in names:
-    output.paste(image.img, (image.coordx*16, image.coordy*16))
+    img = Image.open(image.img)
+    output.paste(img, (image.coordx*16, image.coordy*16))
     cnt += 1
+    img.close()
     print(f"{cnt}/{len} complete...")
 
 print("Saving image as output.png...")
